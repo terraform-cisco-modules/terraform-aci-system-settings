@@ -4,7 +4,7 @@
 
 # Terraform ACI - System Settings Module
 
-A Terraform module to configure ACI System Settings Policies.
+A Terraform module to configure ACI System Settings.
 
 This module is part of the Cisco [*Intersight as Code*](https://cisco.com/go/intersightascode) project. Its goal is to allow users to instantiate network fabrics in minutes using an easy to use, opinionated data model. It takes away the complexity of having to deal with references, dependencies or loops. By completely separating data (defining variables) from logic (infrastructure declaration), it allows the user to focus on describing the intended configuration while using a set of maintained and tested Terraform Modules without the need to understand the low-level Intersight object model.
 
@@ -25,8 +25,8 @@ A comprehensive example using this module is available here: https://github.com/
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_aes_passphrase"></a> [aes\_passphrase](#input\_aes\_passphrase) | Global AES Passphrase. | `string` | n/a | yes |
 | <a name="input_model"></a> [model](#input\_model) | Model data. | `any` | n/a | yes |
+| <a name="input_aes_passphrase"></a> [aes\_passphrase](#input\_aes\_passphrase) | Global AES Passphrase. | `string` | n/a | yes |
 ## Outputs
 
 No outputs.
