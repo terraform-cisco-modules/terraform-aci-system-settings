@@ -1,6 +1,6 @@
 locals {
   defaults = lookup(var.model, "defaults", {})
-  switch = lookup(var.model, "switch", {})
+  switch   = lookup(var.model, "switch", {})
 
   #__________________________________________________________
   #
