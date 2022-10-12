@@ -1,43 +1,134 @@
 locals {
   defaults = lookup(var.model, "defaults", {})
-  aes      = local.defaults.system_settings.global_aes_encryption_settings
-  aging    = local.defaults.system_settings.endpoint_controls.ip_aging
-  coop     = local.defaults.system_settings.coop_group
-  endpoint = local.defaults.system_settings.endpoint_controls
-  fwide    = local.defaults.system_settings.fabric_wide_settings
-  isis     = local.defaults.system_settings.isis_policy
-  loop     = local.defaults.system_settings.endpoint_controls.ep_loop_protection
-  ptp      = local.defaults.system_settings.ptp_and_latency_measurement
-  recommended_settings = lookup(local.system_settings, "recommended_settings", {
-    coop_group                     = false
-    endpoint_controls              = false
-    fabric_wide_settings           = false
-    global_aes_encryption_settings = false
-    isis_policy                    = false
-    port_tracking                  = false
-    ptp_and_latency_measurement    = false
-  })
-  rouge           = local.defaults.system_settings.endpoint_controls.rouge_ep_control
-  system_settings = lookup(var.model, "system_settings", {})
-  track           = local.defaults.system_settings.port_tracking
-
+  switch   = lookup(var.model, "switch", {})
 
   #__________________________________________________________
   #
-  # BGP Variables
+  # Leaf Profiles Variables
   #__________________________________________________________
 
-  bgp_route_reflectors = {
-    for i in flatten([
-      for v in lookup(lookup(
-        local.system_settings, "bgp_route_reflector", local.defaults.system_settings.bgp_route_reflector
-        ), "pods", []) : [
-        for s in v.route_reflector_nodes : {
-          annotation = local.defaults.annotation
-          node_id    = s
-          pod_id     = v.pod
-        }
-      ]
-    ]) : "${i.pod_id}_${i.node_id}" => i
+  switch_profiles = {
+    for k, v in var.switch_profiles : k => {
+      annotation        = v.annotation != null ? v.annotation : ""
+      description       = v.description != null ? v.description : ""
+      external_pool_id  = length(compact([v.external_pool_id])) > 0 ? v.external_pool_id : 0
+      inband_addressing = v.inband_addressing != null ? v.inband_addressing : []
+      interfaces        = v.interfaces != null ? v.interfaces : []
+      policy_group      = v.policy_group != null ? v.policy_group : "default"
+      monitoring_policy = v.monitoring_policy != null ? v.monitoring_policy : "default"
+      name              = v.name
+      node_type         = v.node_type != null ? v.node_type : "leaf"
+      ooband_addressing = v.ooband_addressing != null ? v.ooband_addressing : []
+      pod_id            = v.pod_id != null ? v.pod_id : 1
+      role              = v.role != null ? v.role : "unspecified"
+      serial_number     = v.serial_number
+      two_slot_leaf     = v.two_slot_leaf != null ? v.two_slot_leaf : false
+    }
   }
+
+  interface_selectors_loop = flatten([
+    for k, v in local.switch_profiles : [
+      for s in v.interfaces : {
+        annotation            = v.annotation != null ? v.annotation : ""
+        description           = s.description != null ? s.description : ""
+        interface_description = s.interface_description != null ? s.interface_description : ""
+        interface_name = coalesce(s.sub_port, false) == true && v.two_slot_leaf == true && length(
+          regexall("^\\d$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-00${element(split("/", s.interface), 1)}-${element(split("/", s.interface), 2
+          )}" : coalesce(s.sub_port, false) == true && v.two_slot_leaf == true && length(
+          regexall("^\\d{2}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-0${element(split("/", s.interface), 1)}-${element(split("/", s.interface), 2
+          )}" : coalesce(s.sub_port, false) == true && v.two_slot_leaf == true && length(
+          regexall("^\\d{3}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-${element(split("/", s.interface), 1)}-${element(split("/", s.interface), 2
+          )}" : coalesce(s.sub_port, false) == false && v.two_slot_leaf == true && length(
+          regexall("^\\d$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-00${element(split("/", s.interface), 1
+          )}" : coalesce(s.sub_port, false) == false && v.two_slot_leaf == true && length(
+          regexall("^\\d{2}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-0${element(split("/", s.interface), 1
+          )}" : coalesce(s.sub_port, false) == false && v.two_slot_leaf == true && length(
+          regexall("^\\d{3}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-${element(split("/", s.interface), 1
+          )}" : coalesce(s.sub_port, false) == true && v.two_slot_leaf == false && length(
+          regexall("^\\d$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-0${element(split("/", s.interface), 1)}-${element(split("/", s.interface), 2
+          )}" : coalesce(s.sub_port, false) == true && v.two_slot_leaf == false && length(
+          regexall("^\\d{2}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-${element(split("/", s.interface), 1)}-${element(split("/", s.interface), 2
+          )}" : coalesce(s.sub_port, false) == false && v.two_slot_leaf == false && length(
+          regexall("^\\d$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-0${element(split("/", s.interface), 1
+          )}" : coalesce(s.sub_port, false) == false && v.two_slot_leaf == false && length(
+          regexall("^\\d{2}$", element(split("/", s.interface), 1))) > 0 ? "Eth${element(split("/", s.interface), 0
+            )}-${element(split("/", s.interface), 1
+        )}" : ""
+        key1              = k
+        key2              = s.interface
+        module            = element(split("/", s.interface), 0)
+        name              = v.name
+        node_type         = v.node_type
+        port              = element(split("/", s.interface), 1)
+        policy_group      = s.policy_group != null ? s.policy_group : ""
+        policy_group_type = s.policy_group_type != null ? s.policy_group_type : "access"
+        sub_port          = s.sub_port != false ? element(split("/", s.interface), 2) : ""
+      }
+    ]
+  ])
+
+
+  interface_selectors = {
+    for k, v in local.interface_selectors_loop : "${v.key1}_Eth${v.key2}" => v
+  }
+
+  inband_loop = flatten([
+    for k, v in local.switch_profiles : [
+      for s in v.inband_addressing : {
+        annotation          = v.annotation != null ? v.annotation : ""
+        ipv4_address        = s.ipv4_address != null ? s.ipv4_address : ""
+        ipv4_gateway        = s.ipv4_gateway != null ? s.ipv4_gateway : ""
+        ipv6_address        = s.ipv6_address != null ? s.ipv6_address : ""
+        ipv6_gateway        = s.ipv6_gateway != null ? s.ipv6_gateway : ""
+        management_epg      = s.management_epg != null ? s.management_epg : "default"
+        management_epg_type = "inb"
+        node_id             = k
+        pod_id              = v.pod_id
+      }
+    ]
+  ])
+  inband = { for k, v in local.inband_loop : "${v.node_id}_${v.management_epg_type}" => v }
+
+  ooband_loop = flatten([
+    for k, v in local.switch_profiles : [
+      for s in v.ooband_addressing : {
+        annotation          = v.annotation != null ? v.annotation : ""
+        ipv4_address        = s.ipv4_address != null ? s.ipv4_address : ""
+        ipv4_gateway        = s.ipv4_gateway != null ? s.ipv4_gateway : ""
+        ipv6_address        = s.ipv6_address != null ? s.ipv6_address : ""
+        ipv6_gateway        = s.ipv6_gateway != null ? s.ipv6_gateway : ""
+        management_epg      = s.management_epg != null ? s.management_epg : "default"
+        management_epg_type = "oob"
+        node_id             = k
+        pod_id              = v.pod_id
+      }
+    ]
+  ])
+  ooband = { for k, v in local.ooband_loop : "${v.node_id}_${v.management_epg_type}" => v }
+
+  static_node_mgmt_addresses = merge(local.inband, local.ooband)
+
+  #__________________________________________________________
+  #
+  # VPC Domains Variables
+  #__________________________________________________________
+
+  vpc_domains = {
+    for k, v in var.vpc_domains : k => {
+      annotation        = v.annotation != null ? v.annotation : ""
+      domain_id         = v.domain_id
+      switches          = v.switches != null ? v.switches : []
+      vpc_domain_policy = v.vpc_domain_policy != null ? v.vpc_domain_policy : "default"
+    }
+  }
+
 }
