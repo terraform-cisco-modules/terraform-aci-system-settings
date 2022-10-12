@@ -34,5 +34,17 @@ No outputs.
 
 | Name | Type |
 |------|------|
-| [aci_vpc_explicit_protection_group.vpc_domains](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/vpc_explicit_protection_group) | resource |
+| [aci_coop_policy.coop_group_policy](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/coop_policy) | resource |
+| [aci_encryption_key.global_aes_passphrase](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/encryption_key) | resource |
+| [aci_endpoint_controls.rouge_ep_control](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/endpoint_controls) | resource |
+| [aci_endpoint_ip_aging_profile.ip_aging](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/endpoint_ip_aging_profile) | resource |
+| [aci_isis_domain_policy.isis_policy](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/isis_domain_policy) | resource |
+| [aci_mgmt_preference.apic_connectivity_preference](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/mgmt_preference) | resource |
+| [aci_port_tracking.port_tracking](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/port_tracking) | resource |
+| [aci_rest_managed.bgp_autonomous_system_number](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
+| [aci_rest_managed.bgp_route_reflectors](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
+| [aci_rest_managed.ep_loop_protection](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
+| [aci_rest_managed.fabric_wide_settings](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
+| [aci_rest_managed.fabric_wide_settings_5_2_3](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
+| [aci_rest_managed.ptp_and_latency_measurement](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 <!-- END_TF_DOCS -->
