@@ -14,6 +14,7 @@ System > System Settings: Global AES Encryption Setting — Sensitive Variables
 _______________________________________________________________________________________________________________________
 */
 variable "aes_passphrase" {
+  default     = ""
   description = "Global AES Passphrase."
   sensitive   = true
   type        = string
