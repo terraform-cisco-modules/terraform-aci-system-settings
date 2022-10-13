@@ -38,6 +38,6 @@ locals {
           pod_id     = v.pod
         }
       ]
-    ]) : "${i.pod_id}_${i.node_id}" => i
+    ]) : "Pod-${i.pod_id}-Node-${i.node_id}" => i
   }
 }
