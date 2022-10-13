@@ -15,12 +15,12 @@ A comprehensive example using this module is available here: https://github.com/
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aci"></a> [aci](#requirement\_aci) | >= 2.1.0 |
+| <a name="requirement_aci"></a> [aci](#requirement\_aci) | >= 2.5.2 |
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aci"></a> [aci](#provider\_aci) | >= 2.1.0 |
+| <a name="provider_aci"></a> [aci](#provider\_aci) | >= 2.5.2 |
 ## Inputs
 
 | Name | Description | Type | Default | Required |
