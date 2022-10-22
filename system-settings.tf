@@ -21,7 +21,7 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "bgp_autonomous_system_number" {
-  for_each   = { for v in lookup(local.system_settings, "bgp", []) : "default" => v }
+  for_each   = { for v in lookup(local.system_settings, "bgp", []) : v.autonomous_system_number => v }
   class_name = "bgpAsP"
   dn         = "uni/fabric/bgpInstP-default/as"
   content = {
