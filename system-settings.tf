@@ -8,7 +8,7 @@ ________________________________________________________________________________
 */
 resource "aci_mgmt_preference" "apic_connectivity_preference" {
   for_each       = { for v in lookup(local.system_settings, "apic_connectivity_preference", []) : "default" => v }
-  annotation     = local.defaults.annotation
+  annotation     = var.annotation
   interface_pref = each.value
 }
 
@@ -21,11 +21,11 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "bgp_autonomous_system_number" {
-  for_each   = { for v in lookup(local.system_settings, "bgp_route_reflectors", []) : "default" => v }
+  for_each   = { for v in lookup(local.system_settings, "bgp", []) : "default" => v }
   class_name = "bgpAsP"
   dn         = "uni/fabric/bgpInstP-default/as"
   content = {
-    # annotation = local.defaults.annotation
+    # annotation = var.annotation
     asn = each.value.autonomous_system_number
   }
 }
@@ -44,7 +44,7 @@ resource "aci_rest_managed" "bgp_route_reflectors" {
   class_name = "bgpRRNodePEp"
   dn         = "uni/fabric/bgpInstP-default/rr/node-${each.value.node_id}"
   content = {
-    # annotation = each.value.annotation != "" ? each.value.annotation : local.defaults.annotation
+    # annotation = each.value.annotation != "" ? each.value.annotation : var.annotation
     id    = each.value.node_id
     podId = each.value.pod_id
   }
@@ -63,7 +63,7 @@ resource "aci_coop_policy" "coop_group_policy" {
     for v in toset(["default"]) : "default" => v if local.recommended_settings.coop_group == true
   }
   annotation = length(compact([local.coop.annotation])
-  ) > 0 ? local.coop.annotation : local.defaults.annotation
+  ) > 0 ? local.coop.annotation : var.annotation
   type = local.coop.type
 }
 
@@ -84,7 +84,7 @@ resource "aci_endpoint_controls" "rouge_ep_control" {
   }
   admin_st = local.rouge.administrative_state
   annotation = length(compact([local.endpoint.annotation])
-  ) > 0 ? local.endpoint.annotation : local.defaults.annotation
+  ) > 0 ? local.endpoint.annotation : var.annotation
   hold_intvl            = local.rouge.hold_interval
   rogue_ep_detect_intvl = local.rouge.rouge_interval
   rogue_ep_detect_mult  = local.rouge.rouge_multiplier
@@ -106,7 +106,7 @@ resource "aci_endpoint_ip_aging_profile" "ip_aging" {
   }
   admin_st = local.aging.administrative_state
   annotation = length(compact([local.endpoint.annotation])
-  ) > 0 ? local.endpoint.annotation : local.defaults.annotation
+  ) > 0 ? local.endpoint.annotation : var.annotation
 }
 
 /*_____________________________________________________________________________________________________________________
@@ -139,7 +139,7 @@ resource "aci_rest_managed" "ep_loop_protection" {
     ))), ",") : ""
     adminSt = local.loop.administrative_state
     # annotation = length(compact([local.endpoint.annotation])
-    # ) > 0 ? local.endpoint.annotation : local.defaults.annotation
+    # ) > 0 ? local.endpoint.annotation : var.annotation
     loopDetectIntvl = local.loop.loop_detection_interval
     loopDetectMult  = local.loop.loop_detection_multiplier
   }
@@ -161,7 +161,7 @@ resource "aci_rest_managed" "ep_loop_protection" {
 #   ))), ",") : ""
 #   admin_st          = local.loop.administrative_state
 #   annotation = length(compact([local.endpoint.annotation])
-#   ) > 0 ? local.endpoint.annotation : local.defaults.annotation
+#   ) > 0 ? local.endpoint.annotation : var.annotation
 #   loop_detect_intvl = local.loop.loop_detection_interval
 #   loop_detect_mult  = local.loop.loop_detection_multiplier
 # }
@@ -178,14 +178,14 @@ resource "aci_rest_managed" "fabric_wide_settings" {
   for_each = {
     for v in toset(["default"]
       ) : "default" => v if local.recommended_settings.fabric_wide_settings == true && length(
-      regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", local.defaults.apic_version)
+      regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", var.apic_version)
     ) > 0
   }
   class_name = "infraSetPol"
   dn         = "uni/infra/settings"
   content = {
     annotation = length(compact([local.fwide.annotation])
-    ) > 0 ? local.fwide.annotation : local.defaults.annotation
+    ) > 0 ? local.fwide.annotation : var.annotation
     domainValidation           = local.fwide.enforce_domain_validation == true ? "yes" : "no"
     enforceSubnetCheck         = local.fwide.enforce_subnet_check == true ? "yes" : "no"
     opflexpAuthenticateClients = local.fwide.spine_opflex_client_authentication == true ? "yes" : "no"
@@ -201,7 +201,7 @@ resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
   for_each = {
     for v in toset(["default"]
       ) : "default" => v if local.recommended_settings.fabric_wide_settings == true && length(
-      regexall("(5\\.2(3[a-z])|^[7-9]\\.)", local.defaults.apic_version)
+      regexall("(5\\.2(3[a-z])|^[7-9]\\.)", var.apic_version)
     ) > 0
   }
   class_name = "infraSetPol"
@@ -268,7 +268,7 @@ resource "aci_isis_domain_policy" "isis_policy" {
     for v in toset(["default"]) : "default" => v if local.recommended_settings.isis_policy == true
   }
   annotation = length(compact([local.isis.annotation])
-  ) > 0 ? local.isis.annotation : local.defaults.annotation
+  ) > 0 ? local.isis.annotation : var.annotation
   lsp_fast_flood      = local.isis.lsp_fast_flood_mode
   lsp_gen_init_intvl  = local.isis.lsp_generation_initial_wait_interval
   lsp_gen_max_intvl   = local.isis.lsp_generation_maximum_wait_interval
@@ -294,7 +294,7 @@ resource "aci_port_tracking" "port_tracking" {
     for v in toset(["default"]) : "default" => v if local.recommended_settings.port_tracking == true
   }
   annotation = length(compact([local.track.annotation])
-  ) > 0 ? local.track.annotation : local.defaults.annotation
+  ) > 0 ? local.track.annotation : var.annotation
   admin_st           = local.track.port_tracking_state
   delay              = local.track.delay_restore_timer
   include_apic_ports = local.track.include_apic_ports == true ? "yes" : "no"
@@ -319,7 +319,7 @@ resource "aci_rest_managed" "ptp_and_latency_measurement" {
   dn         = "uni/fabric/ptpmode"
   content = {
     annotation = length(compact([local.ptp.annotation])
-    ) > 0 ? local.ptp.annotation : local.defaults.annotation
+    ) > 0 ? local.ptp.annotation : var.annotation
     fabAnnounceIntvl   = local.ptp.announce_interval
     fabAnnounceTimeout = local.ptp.announce_timeout
     fabDelayIntvl      = local.ptp.delay_request_interval

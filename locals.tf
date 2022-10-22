@@ -33,9 +33,9 @@ locals {
         local.system_settings, "bgp_route_reflector", local.defaults.system_settings.bgp_route_reflector
         ), "pods", []) : [
         for s in v.route_reflector_nodes : {
-          annotation = local.defaults.annotation
+          annotation = var.annotation
           node_id    = s
-          pod_id     = v.pod
+          pod_id     = v.pod_id
         }
       ]
     ]) : "Pod-${i.pod_id}:Node-${i.node_id}" => i
