@@ -318,8 +318,8 @@ resource "aci_rest_managed" "ptp_and_latency_measurement" {
   class_name = "latencyPtpMode"
   dn         = "uni/fabric/ptpmode"
   content = {
-    annotation = length(compact([local.ptp.annotation])
-    ) > 0 ? local.ptp.annotation : var.annotation
+    # annotation = length(compact([local.ptp.annotation])
+    # ) > 0 ? local.ptp.annotation : var.annotation
     fabAnnounceIntvl   = local.ptp.announce_interval
     fabAnnounceTimeout = local.ptp.announce_timeout
     fabDelayIntvl      = local.ptp.delay_request_interval
