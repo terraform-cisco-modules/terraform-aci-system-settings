@@ -30,7 +30,7 @@ locals {
   bgp_route_reflectors = {
     for i in flatten([
       for v in lookup(lookup(
-        local.system_settings, "bgp_route_reflector", local.defaults.system_settings.bgp_route_reflector
+        local.system_settings, "bgp_route_reflector", {}
         ), "pods", []) : [
         for s in v.route_reflector_nodes : {
           annotation = var.annotation
