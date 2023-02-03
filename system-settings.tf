@@ -201,7 +201,7 @@ resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
   for_each = {
     for v in toset(["default"]
       ) : "default" => v if local.recommended_settings.fabric_wide_settings == true && length(
-      regexall("(5\\.2(3[a-z])|^[7-9]\\.)", var.apic_version)
+      regexall("(^5\\.2(3[a-z])|^5\\.2([4-9][a-z])|^[6-9]\\.)", var.apic_version)
     ) > 0
   }
   class_name = "infraSetPol"
