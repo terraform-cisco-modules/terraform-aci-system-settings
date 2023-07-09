@@ -7,8 +7,7 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_mgmt_preference" "apic_connectivity_preference" {
-  for_each       = { for v in lookup(local.system_settings, "apic_connectivity_preference", []) : "default" => v }
-  annotation     = var.annotation
+  for_each       = { for v in lookup(var.system_settings, "apic_connectivity_preference", []) : "default" => v }
   interface_pref = each.value
 }
 
@@ -21,11 +20,10 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "bgp_autonomous_system_number" {
-  for_each   = { for v in lookup(local.system_settings, "bgp", []) : v.autonomous_system_number => v }
+  for_each   = { for v in [lookup(var.system_settings, "bgp_route_reflector", {})] : v.autonomous_system_number => v }
   class_name = "bgpAsP"
   dn         = "uni/fabric/bgpInstP-default/as"
   content = {
-    # annotation = var.annotation
     asn = each.value.autonomous_system_number
   }
 }
@@ -39,17 +37,24 @@ GUI Location:
  - System > System Settings > BGP Route Reflector: Route Reflector Nodes
 _______________________________________________________________________________________________________________________
 */
-resource "aci_rest_managed" "bgp_route_reflectors" {
-  for_each   = local.bgp_route_reflectors
+resource "aci_rest_managed" "route_reflector_nodes" {
+  for_each   = local.route_reflector_nodes
   class_name = "bgpRRNodePEp"
   dn         = "uni/fabric/bgpInstP-default/rr/node-${each.value.node_id}"
   content = {
-    # annotation = each.value.annotation != "" ? each.value.annotation : var.annotation
     id    = each.value.node_id
     podId = each.value.pod_id
   }
 }
 
+resource "aci_rest" "bgp_instance" {
+  for_each   = { for v in ["default"] : v => v if length(lookup(var.system_settings, "bgp_route_reflector", {})) > 0 }
+  class_name = "bgpInstPol"
+  path       = "/api/mo/uni/fabric/bgpInstP-default.json"
+  content = {
+    annotation = "orchestrator:terraform"
+  }
+}
 /*_____________________________________________________________________________________________________________________
 API Information:
  - Class: "coopPol"
@@ -59,11 +64,9 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_coop_policy" "coop_group" {
-  for_each = { for v in ["default"] : "default" => v if length(local.coop_group) > 0 }
-  annotation = length(compact([lookup(local.coop_group, "annotation", "")])
-  ) > 0 ? local.coop_group.annotation : var.annotation
-  description = lookup(local.coop_group, "description", "")
-  type        = local.coop_group.type
+  for_each    = { for v in [local.coop_group] : "default" => v if v.create == true }
+  description = each.value.description
+  type        = each.value.type
 }
 
 
@@ -76,13 +79,11 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_endpoint_controls" "rouge_ep_control" {
-  for_each = { for v in ["default"] : "default" => v if length(local.rouge_ep_control) > 0 }
-  admin_st = lookup(local.rouge_ep_control, "administrative_state", local.rec.administrative_state)
-  annotation = length(compact([lookup(local.endpoints, "annotation", "")])
-  ) > 0 ? local.endpoints.annotation : var.annotation
-  hold_intvl            = lookup(local.rouge_ep_control, "hold_interval", local.rec.hold_interval)
-  rogue_ep_detect_intvl = lookup(local.rouge_ep_control, "rouge_interval", local.rec.rouge_interval)
-  rogue_ep_detect_mult  = lookup(local.rouge_ep_control, "rouge_multiplier", local.rec.rouge_multiplier)
+  for_each              = { for v in [local.rouge_ep_control] : "default" => v if v.create == true }
+  admin_st              = each.value.administrative_state
+  hold_intvl            = each.value.hold_interval
+  rogue_ep_detect_intvl = each.value.rouge_interval
+  rogue_ep_detect_mult  = each.value.rouge_multiplier
 }
 
 /*_____________________________________________________________________________________________________________________
@@ -94,10 +95,8 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_endpoint_ip_aging_profile" "ip_aging" {
-  for_each = { for v in ["default"] : "default" => v if length(local.ip_aging) > 0 }
+  for_each = { for v in [local.ip_aging] : "default" => v if v.create == true }
   admin_st = lookup(local.ip_aging, "administrative_state", local.ipa.administrative_state)
-  annotation = length(compact([lookup(local.endpoints, "annotation", "")])
-  ) > 0 ? local.endpoints.annotation : var.annotation
 }
 
 /*_____________________________________________________________________________________________________________________
@@ -129,30 +128,34 @@ ________________________________________________________________________________
 #        ) > 0 ? "port-disable" : ""]
 #    ))), ",") : ""
 #    adminSt = local.loop.administrative_state
-#    # annotation = length(compact([local.endpoint.annotation])
-#    # ) > 0 ? local.endpoint.annotation : var.annotation
 #    loopDetectIntvl = local.loop.loop_detection_interval
 #    loopDetectMult  = local.loop.loop_detection_multiplier
 #  }
 #}
 resource "aci_endpoint_loop_protection" "ep_loop_protection" {
-  for_each = { for v in ["default"] : "default" => v if local.ep_loop_protection.create == true }
+  for_each = { for v in [local.ep_loop_protection] : "default" => v if v.create == true }
   action = anytrue(
     [
-      local.ep_loop_protection.action.bd_learn_disable,
-      local.ep_loop_protection.action.port_disable
+      each.value.action.bd_learn_disable,
+      each.value.action.port_disable
     ]
     ) ? compact(concat(
-      [length(regexall(true, local.ep_loop_protection.action.bd_learn_disable)) > 0 ? "bd-learn-disable" : ""
-      ], [length(regexall(true, local.ep_loop_protection.action.port_disable)) > 0 ? "port-disable" : ""]
+      [length(regexall(true, each.value.action.bd_learn_disable)) > 0 ? "bd-learn-disable" : ""
+      ], [length(regexall(true, each.value.action.port_disable)) > 0 ? "port-disable" : ""]
   )) : []
-  admin_st = local.ep_loop_protection.administrative_state
-  annotation = length(compact([lookup(local.endpoints, "annotation", "")])
-  ) > 0 ? local.endpoints.annotation : var.annotation
-  loop_detect_intvl = local.ep_loop_protection.loop_detection_interval
-  loop_detect_mult  = local.ep_loop_protection.loop_detection_multiplier
+  admin_st          = each.value.administrative_state
+  loop_detect_intvl = each.value.loop_detection_interval
+  loop_detect_mult  = each.value.loop_detection_multiplier
 }
 
+resource "aci_rest" "endpoint_controls" {
+  for_each   = { for v in ["default"] : v => v if length(lookup(var.system_settings, "endpoint_controls", {})) > 0 }
+  class_name = "bgpInstPol"
+  path       = "/api/mo/uni/fabric/bgpInstP-default.json"
+  content = {
+    annotation = "orchestrator:terraform"
+  }
+}
 /*_____________________________________________________________________________________________________________________
 API Information:
  - Class: "infraSetPol"
@@ -162,28 +165,25 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "fabric_wide_settings" {
-  for_each = { for v in ["default"] : "default" => v if local.fabric_wide_settings.create == true && length(
+  for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
     regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", var.apic_version)
   ) > 0 }
   class_name = "infraSetPol"
   dn         = "uni/infra/settings"
   content = {
-    annotation = length(compact([local.fabric_wide_settings.annotation])
-    ) > 0 ? local.fabric_wide_settings.annotation : var.annotation
-    domainValidation           = local.fabric_wide_settings.enforce_domain_validation == true ? "yes" : "no"
-    enforceSubnetCheck         = local.fabric_wide_settings.enforce_subnet_check == true ? "yes" : "no"
-    opflexpAuthenticateClients = local.fabric_wide_settings.spine_opflex_client_authentication == true ? "yes" : "no"
-    opflexpUseSsl              = local.fabric_wide_settings.spine_ssl_opflex == true ? "yes" : "no"
-    reallocateGipo             = local.fabric_wide_settings.reallocate_gipo == true ? "yes" : "no"
-    restrictInfraVLANTraffic   = local.fabric_wide_settings.restrict_infra_vlan_traffic == true ? "yes" : "no"
-    unicastXrEpLearnDisable    = local.fabric_wide_settings.disable_remote_ep_learning == true ? "yes" : "no"
-    validateOverlappingVlans   = local.fabric_wide_settings.enforce_epg_vlan_validation == true ? "yes" : "no"
+    domainValidation           = each.value.enforce_domain_validation == true ? "yes" : "no"
+    enforceSubnetCheck         = each.value.enforce_subnet_check == true ? "yes" : "no"
+    opflexpAuthenticateClients = each.value.spine_opflex_client_authentication == true ? "yes" : "no"
+    opflexpUseSsl              = each.value.spine_ssl_opflex == true ? "yes" : "no"
+    reallocateGipo             = each.value.reallocate_gipo == true ? "yes" : "no"
+    restrictInfraVLANTraffic   = each.value.restrict_infra_vlan_traffic == true ? "yes" : "no"
+    unicastXrEpLearnDisable    = each.value.disable_remote_ep_learning == true ? "yes" : "no"
+    validateOverlappingVlans   = each.value.enforce_epg_vlan_validation == true ? "yes" : "no"
   }
 }
 
 resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
-  #for_each = { for v in ["default"] : "default" => v if local.fabric_wide_settings.create == true  }
-  for_each = { for v in ["default"] : "default" => v if local.fabric_wide_settings.create == true && length(
+  for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
     regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", var.apic_version)
   ) > 0 }
   class_name = "infraSetPol"
@@ -193,27 +193,27 @@ resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
     # enableMoStreaming      = 	each.value.
     # enableRemoteLeafDirect = 	each.value.
     # policySyncNodeBringup  = 	each.value.
-    domainValidation               = local.fabric_wide_settings.enforce_domain_validation == true ? "yes" : "no"
-    enforceSubnetCheck             = local.fabric_wide_settings.enforce_subnet_check == true ? "yes" : "no"
-    leafOpflexpAuthenticateClients = local.fabric_wide_settings.leaf_opflex_client_authentication == true ? "yes" : "no"
-    leafOpflexpUseSsl              = local.fabric_wide_settings.leaf_ssl_opflex == true ? "yes" : "no"
-    opflexpAuthenticateClients     = local.fabric_wide_settings.spine_opflex_client_authentication == true ? "yes" : "no"
+    domainValidation               = each.value.enforce_domain_validation == true ? "yes" : "no"
+    enforceSubnetCheck             = each.value.enforce_subnet_check == true ? "yes" : "no"
+    leafOpflexpAuthenticateClients = each.value.leaf_opflex_client_authentication == true ? "yes" : "no"
+    leafOpflexpUseSsl              = each.value.leaf_ssl_opflex == true ? "yes" : "no"
+    opflexpAuthenticateClients     = each.value.spine_opflex_client_authentication == true ? "yes" : "no"
     opflexpSslProtocols = anytrue(
       [
-        local.fabric_wide_settings.ssl_opflex_versions.TLSv1,
-        local.fabric_wide_settings.ssl_opflex_versions.TLSv1_1,
-        local.fabric_wide_settings.ssl_opflex_versions.TLSv1_2
+        each.value.ssl_opflex_versions.TLSv1,
+        each.value.ssl_opflex_versions.TLSv1_1,
+        each.value.ssl_opflex_versions.TLSv1_2
       ]
       ) ? replace(trim(join(",", concat([
-        length(regexall(true, local.fabric_wide_settings.ssl_opflex_versions.TLSv1)) > 0 ? "TLSv1" : ""], [
-        length(regexall(true, local.fabric_wide_settings.ssl_opflex_versions.TLSv1_1)) > 0 ? "TLSv1.1" : ""], [
-        length(regexall(true, local.fabric_wide_settings.ssl_opflex_versions.TLSv1_2)) > 0 ? "TLSv1.2" : ""]
+        length(regexall(true, each.value.ssl_opflex_versions.TLSv1)) > 0 ? "TLSv1" : ""], [
+        length(regexall(true, each.value.ssl_opflex_versions.TLSv1_1)) > 0 ? "TLSv1.1" : ""], [
+        length(regexall(true, each.value.ssl_opflex_versions.TLSv1_2)) > 0 ? "TLSv1.2" : ""]
     )), ","), ",,", ",") : "TLSv1.1,TLSv1.2"
-    opflexpUseSsl            = local.fabric_wide_settings.spine_ssl_opflex == true ? "yes" : "no"
-    reallocateGipo           = local.fabric_wide_settings.reallocate_gipo == true ? "yes" : "no"
-    restrictInfraVLANTraffic = local.fabric_wide_settings.restrict_infra_vlan_traffic == true ? "yes" : "no"
-    unicastXrEpLearnDisable  = local.fabric_wide_settings.disable_remote_ep_learning == true ? "yes" : "no"
-    validateOverlappingVlans = local.fabric_wide_settings.enforce_epg_vlan_validation == true ? "yes" : "no"
+    opflexpUseSsl            = each.value.spine_ssl_opflex == true ? "yes" : "no"
+    reallocateGipo           = each.value.reallocate_gipo == true ? "yes" : "no"
+    restrictInfraVLANTraffic = each.value.restrict_infra_vlan_traffic == true ? "yes" : "no"
+    unicastXrEpLearnDisable  = each.value.disable_remote_ep_learning == true ? "yes" : "no"
+    validateOverlappingVlans = each.value.enforce_epg_vlan_validation == true ? "yes" : "no"
   }
 }
 
@@ -230,8 +230,6 @@ resource "aci_encryption_key" "global_aes_passphrase" {
   for_each = {
     for v in ["default"] : "default" => v if length(local.global_aes_encryption_settings) > 0
   }
-  annotation = length(compact([lookup(local.global_aes_encryption_settings, "annotation", local.aes.annotation
-  )])) > 0 ? local.global_aes_encryption_settings.annotation : var.annotation
   clear_encryption_key = lookup(local.global_aes_encryption_settings, "clear_passphrase", local.aes.clear_passphrase
   ) == true ? "yes" : "no"
   description = lookup(local.global_aes_encryption_settings, "description", local.aes.description)
@@ -252,26 +250,16 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_isis_domain_policy" "isis_policy" {
-  for_each = { for v in ["default"] : "default" => v if length(local.isis_policy) > 0 }
-  annotation = length(compact([lookup(local.isis_policy, "annotation", local.isis.annotation)])
-  ) > 0 ? local.isis_policy.annotation : var.annotation
-  lsp_fast_flood     = lookup(local.isis_policy, "lsp_fast_flood_mode", local.isis.lsp_fast_flood_mode)
-  lsp_gen_init_intvl = lookup(local.isis_policy, "lsp_generation_initial_wait_interval", local.isis.lsp_generation_initial_wait_interval)
-  lsp_gen_max_intvl  = lookup(local.isis_policy, "lsp_generation_maximum_wait_interval", local.isis.lsp_generation_maximum_wait_interval)
-  lsp_gen_sec_intvl  = lookup(local.isis_policy, "lsp_generation_second_wait_interval", local.isis.lsp_generation_second_wait_interval)
-  mtu                = lookup(local.isis_policy, "isis_mtu", local.isis.isis_mtu)
-  redistrib_metric = lookup(
-    local.isis_policy, "isis_metric_for_redistributed_routes", local.isis.isis_metric_for_redistributed_routes
-  )
-  spf_comp_init_intvl = lookup(
-    local.isis_policy, "sfp_computation_frequency_initial_wait_interval", local.isis.sfp_computation_frequency_initial_wait_interval
-  )
-  spf_comp_max_intvl = lookup(
-    local.isis_policy, "sfp_computation_frequency_maximum_wait_interval", local.isis.sfp_computation_frequency_maximum_wait_interval
-  )
-  spf_comp_sec_intvl = lookup(
-    local.isis_policy, "sfp_computation_frequency_second_wait_interval", local.isis.sfp_computation_frequency_second_wait_interval
-  )
+  for_each            = { for v in [local.isis_policy] : "default" => v if v.create == true }
+  lsp_fast_flood      = each.value.lsp_fast_flood_mode
+  lsp_gen_init_intvl  = each.value.lsp_generation_initial_wait_interval
+  lsp_gen_max_intvl   = each.value.lsp_generation_maximum_wait_interval
+  lsp_gen_sec_intvl   = each.value.lsp_generation_second_wait_interval
+  mtu                 = each.value.isis_mtu
+  redistrib_metric    = each.value.isis_metric_for_redistributed_routes
+  spf_comp_init_intvl = each.value.sfp_computation_frequency_initial_wait_interval
+  spf_comp_max_intvl  = each.value.sfp_computation_frequency_maximum_wait_interval
+  spf_comp_sec_intvl  = each.value.sfp_computation_frequency_second_wait_interval
 }
 
 
@@ -284,15 +272,11 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_port_tracking" "port_tracking" {
-  for_each = { for v in ["default"] : "default" => v if length(local.port_tracking) > 0 }
-  admin_st = lookup(local.port_tracking, "port_tracking_state", local.ptrack.port_tracking_state)
-  annotation = length(compact([lookup(local.port_tracking, "annotation", local.ptrack.annotation)])
-  ) > 0 ? local.port_tracking.annotation : var.annotation
-  delay = lookup(local.port_tracking, "delay_restore_timer", local.ptrack.delay_restore_timer)
-  include_apic_ports = lookup(
-    local.port_tracking, "include_apic_ports", local.ptrack.include_apic_ports
-  ) == true ? "yes" : "no"
-  minlinks = lookup(local.port_tracking, "number_of_active_ports", local.ptrack.number_of_active_ports)
+  for_each           = { for v in [local.port_tracking] : "default" => v if v.create == true }
+  admin_st           = each.value.port_tracking_state == true ? "on" : "off"
+  delay              = each.value.delay_restore_timer
+  include_apic_ports = each.value.include_apic_ports == true ? "yes" : "no"
+  minlinks           = each.value.number_of_active_ports
 }
 
 
@@ -309,8 +293,6 @@ resource "aci_rest_managed" "ptp_and_latency_measurement" {
   class_name = "latencyPtpMode"
   dn         = "uni/fabric/ptpmode"
   content = {
-    annotation = length(compact([lookup(local.ptp_and_latency_measurement, "annotation", local.ptp.annotation)])
-    ) > 0 ? local.ptp_and_latency_measurement.annotation : var.annotation
     fabAnnounceIntvl   = lookup(local.ptp_and_latency_measurement, "announce_interval", local.ptp.announce_interval)
     fabAnnounceTimeout = lookup(local.ptp_and_latency_measurement, "announce_timeout", local.ptp.announce_timeout)
     fabDelayIntvl      = lookup(local.ptp_and_latency_measurement, "delay_request_interval", local.ptp.delay_request_interval)

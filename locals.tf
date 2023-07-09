@@ -1,35 +1,50 @@
 locals {
-  defaults   = lookup(var.model, "defaults", {}).system_settings
-  aes        = local.defaults.global_aes_encryption_settings
-  coop_group = local.rs_coop_group == true ? local.defaults.coop_group : lookup(local.system_settings, "coop_group", {})
-  endpoint   = local.defaults.endpoint_controls
-  fwide      = local.defaults.fabric_wide_settings
-  global_aes_encryption_settings = local.rs_global_aes == true ? local.aes : lookup(
-    local.system_settings, "global_aes_encryption_settings", {}
+  defaults = yamldecode(file("${path.module}/defaults.yaml")).defaults.system_settings
+
+  # DEFAULTS
+  aes      = local.defaults.global_aes_encryption_settings
+  coop_grp = local.defaults.coop_group
+  endpoint = local.defaults.endpoint_controls
+  epl      = local.endpoint.ep_loop_protection
+  fwide    = local.defaults.fabric_wide_settings
+  ipa      = local.endpoint.ip_aging
+  isis     = local.defaults.isis_policy
+  ptp      = local.defaults.ptp_and_latency_measurement
+  ptrack   = local.defaults.port_tracking
+
+  # Recommended Settings
+  rsettings = local.defaults.recommended_settings
+  rss = [for v in [lookup(var.system_settings, "recommended_settings", local.rsettings)] : {
+    aes      = lookup(v, "global_aes_encryption_settings", false)
+    coop_grp = lookup(v, "coop_group", false)
+    epctrl   = merge(local.rsettings.endpoint_controls, lookup(v, "endpoint_controls", {}))
+    fws      = lookup(v, "fabric_wide_settings", false)
+    isis     = lookup(v, "isis_policy", false)
+    ptp      = lookup(v, "ptp_and_latency_measurement", false)
+    ptrack   = lookup(v, "port_tracking", false)
+  }][0]
+
+  # POLICIES
+  coop_group = local.rss.coop_grp == false && length(lookup(var.system_settings, "coop_group", {})) > 0 ? merge(
+    { create = true }, local.coop_grp, lookup(var.system_settings, "coop_group", {})
+  ) : local.rss.coop_grp == true ? merge({ create = true }, local.coop_grp) : merge({ create = false }, local.coop_grp)
+
+  global_aes_encryption_settings = local.rss.aes == true ? local.aes : lookup(
+    var.system_settings, "global_aes_encryption_settings", {}
   )
-  isis          = local.defaults.isis_policy
-  isis_policy   = local.rs_isis_policy == true ? local.isis : lookup(local.system_settings, "isis_policy", {})
-  port_tracking = local.rs_port_tracking == true ? local.ptrack : lookup(local.system_settings, "port_tracking", {})
-  ptp           = local.defaults.ptp_and_latency_measurement
-  ptp_and_latency_measurement = local.rs_port_tracking == true ? local.ptp : lookup(
-    local.system_settings, "ptp_and_latency_measurement", {}
-  )
-  ptrack = local.defaults.port_tracking
-  recommended_settings = lookup(
-    local.system_settings, "recommended_settings", {}
-  )
-  rec              = local.endpoint.rouge_ep_control
-  rs_coop_group    = lookup(local.recommended_settings, "coop_group", false)
-  rs_endpoint      = lookup(local.recommended_settings, "endpoint_controls", {})
-  rs_ep_aging      = lookup(local.rs_endpoint, "ip_aging", false)
-  rs_ep_loop       = lookup(local.rs_endpoint, "ep_loop_protection", false)
-  rs_ep_rouge      = lookup(local.rs_endpoint, "rouge_ep_control", false)
-  rs_fabric_wide   = lookup(local.recommended_settings, "fabric_wide_settings", false)
-  rs_global_aes    = lookup(local.recommended_settings, "global_aes_encryption_settings", false)
-  rs_isis_policy   = lookup(local.recommended_settings, "isis_policy", false)
-  rs_port_tracking = lookup(local.recommended_settings, "port_tracking", false)
-  rs_ptp           = lookup(local.recommended_settings, "ptp_and_latency_measurement", false)
-  system_settings  = lookup(var.model, "system_settings", {})
+
+  isis_policy = local.rss.isis == false && length(lookup(var.system_settings, "isis_policy", {})) > 0 ? merge(
+    { create = true }, local.isis, lookup(var.system_settings, "isis_policy", {})
+  ) : local.rss.isis == true ? merge({ create = true }, local.isis) : merge({ create = false }, local.isis)
+
+  port_tracking = local.rss.ptrack == false && length(lookup(var.system_settings, "port_tracking", {})) > 0 ? merge(
+    { create = true }, local.ptrack, lookup(var.system_settings, "port_tracking", {})
+  ) : local.rss.ptrack == true ? merge({ create = true }, local.ptrack) : merge({ create = false }, local.ptrack)
+
+  ptp_and_latency_measurement = local.rss.ptp == false && length(lookup(
+    var.system_settings, "ptp_and_latency_measurement", {})) > 0 ? merge(
+    { create = true }, local.ptp, lookup(var.system_settings, "ptp_and_latency_measurement", {})
+  ) : local.rss.ptp == true ? merge({ create = true }, local.ptp) : merge({ create = false }, local.ptp)
 
 
   #__________________________________________________________
@@ -37,13 +52,13 @@ locals {
   # BGP Variables
   #__________________________________________________________
 
-  bgp_route_reflectors = {
+  route_reflector_nodes = {
     for i in flatten([
-      for v in lookup(lookup(local.system_settings, "bgp_route_reflector", {}), "pods", []) : [
-        for s in v.route_reflector_nodes : {
-          annotation = var.annotation
-          node_id    = s
-          pod_id     = v.pod_id
+      for v in lookup(lookup(lookup(var.system_settings, "bgp_route_reflector", {}
+        ), "route_reflector_nodes", {}), "pods", []) : [
+        for s in v.nodes : {
+          node_id = s
+          pod_id  = v.pod_id
         }
       ]
     ]) : "Pod-${i.pod_id}:Node-${i.node_id}" => i
@@ -55,29 +70,25 @@ locals {
   # System Settings => Endpoint Controls
   #__________________________________________________________
 
-  endpoints = lookup(local.system_settings, "endpoint_controls", {})
-  epcl      = lookup(lookup(local.system_settings, "endpoint_controls", {}), "ep_loop_protection", {})
-  ep_loop_protection = local.rs_ep_loop == false && length(lookup(lookup(
-    local.system_settings, "endpoint_controls", {}), "ep_loop_protection", {})) > 0 ? {
-    action = {
-      bd_learn_disable = lookup(lookup(local.epcl, "action", {}), "bd_learn_disable", local.epl.action.bd_learn_disable)
-      port_disable     = lookup(lookup(local.epcl, "action", {}), "port_disable", local.epl.action.port_disable)
-    }
-    administrative_state      = lookup(local.epcl, "administrative_state", local.epl.administrative_state)
-    create                    = true
-    loop_detection_interval   = lookup(local.epcl, "loop_detection_interval", local.epl.loop_detection_interval)
-    loop_detection_multiplier = lookup(local.epcl, "loop_detection_multiplier", local.epl.loop_detection_multiplier)
-    } : local.rs_ep_loop == false ? merge({ create = false }, local.endpoint.ep_loop_protection) : merge(
-    { create = true }, local.endpoint.ep_loop_protection
-  )
-  epl = local.endpoint.ep_loop_protection
-  ipa = local.endpoint.ip_aging
-  ip_aging = local.rs_ep_aging == false ? lookup(
-    lookup(local.system_settings, "endpoint_controls", {}), "ip_aging", {}
-  ) : local.endpoint.ip_aging
-  rouge_ep_control = local.rs_ep_rouge == false ? lookup(
-    lookup(local.system_settings, "endpoint_controls", {}), "rouge_ep_control", {}
-  ) : local.defaults.endpoint_controls.rouge_ep_control
+  endpoints = lookup(var.system_settings, "endpoint_controls", {})
+  ep_loop_protection = local.rss.epctrl.ep_loop_protection == false && length(lookup(
+    local.endpoints, "ep_loop_protection", {})) > 0 ? merge({ create = true }, local.endpoint.ep_loop_protection,
+    lookup(local.endpoint, "ep_loop_protection", {}),
+    { action = merge(local.endpoint.ep_loop_protection.action, lookup(lookup(
+      local.endpoints, "ep_loop_protection", {}), "action", {}))
+    }) : local.rss.epctrl.ep_loop_protection == false ? merge({ create = false }, local.endpoint.ep_loop_protection
+  ) : merge({ create = true }, local.endpoint.ep_loop_protection)
+
+  ip_aging = local.rss.epctrl.ip_aging == false && length(lookup(local.endpoints, "ip_aging", {})) > 0 ? merge(
+    { create = true }, local.endpoint.ip_aging, lookup(local.endpoints, "ip_aging", {})
+    ) : local.rss.epctrl.ip_aging == false ? merge({ create = false }, local.endpoint.ip_aging
+  ) : merge({ create = true }, local.endpoint.ip_aging)
+
+  rouge_ep_control = local.rss.epctrl.rouge_ep_control == false && length(lookup(
+    local.endpoints, "rouge_ep_control", {})) > 0 ? merge({ create = true }, local.endpoint.rouge_ep_control,
+    lookup(local.endpoints, "rouge_ep_control", {})) : local.rss.epctrl.rouge_ep_control == false ? merge(
+    { create = false }, local.endpoint.rouge_ep_control
+  ) : merge({ create = true }, local.endpoint.ip_aging)
 
 
   #__________________________________________________________
@@ -85,26 +96,11 @@ locals {
   # System Settings => Fabric Wide Settings
   #__________________________________________________________
 
-  fws = lookup(local.system_settings, "fabric_wide_settings", {})
-  fabric_wide_settings = local.rs_fabric_wide == false && length(local.fws) > 0 ? {
-    annotation                        = lookup(local.fws, "annotation", local.fwide.annotation)
-    create                            = true
-    disable_remote_ep_learning        = lookup(local.fws, "disable_remote_ep_learning", local.fwide.disable_remote_ep_learning)
-    enforce_domain_validation         = lookup(local.fws, "enforce_domain_validation", local.fwide.enforce_domain_validation)
-    enforce_epg_vlan_validation       = lookup(local.fws, "enforce_epg_vlan_validation", local.fwide.enforce_epg_vlan_validation)
-    enforce_subnet_check              = lookup(local.fws, "enforce_subnet_check", local.fwide.enforce_subnet_check)
-    leaf_opflex_client_authentication = lookup(local.fws, "leaf_opflex_client_authentication", local.fwide.leaf_opflex_client_authentication)
-    leaf_ssl_opflex                   = lookup(local.fws, "leaf_ssl_opflex", local.fwide.leaf_ssl_opflex)
-    reallocate_gipo                   = lookup(local.fws, "reallocate_gipo", local.fwide.reallocate_gipo)
-    restrict_infra_vlan_traffic       = lookup(local.fws, "restrict_infra_vlan_traffic", local.fwide.restrict_infra_vlan_traffic)
-    ssl_opflex_versions = {
-      TLSv1   = lookup(lookup(local.fws, "ssl_opflex_versions", {}), "TLSv1", local.fwide.ssl_opflex_versions.TLSv1)
-      TLSv1_1 = lookup(lookup(local.fws, "ssl_opflex_versions", {}), "TLSv1_1", local.fwide.ssl_opflex_versions.TLSv1_1)
-      TLSv1_2 = lookup(lookup(local.fws, "ssl_opflex_versions", {}), "TLSv1_2", local.fwide.ssl_opflex_versions.TLSv1_2)
-    }
-    spine_opflex_client_authentication = lookup(local.fws, "spine_opflex_client_authentication", local.fwide.spine_opflex_client_authentication)
-    spine_ssl_opflex                   = lookup(local.fws, "spine_ssl_opflex", local.fwide.spine_ssl_opflex)
-    } : local.rs_fabric_wide == false ? merge({ create = false }, local.fwide) : merge({ create = true }, local.fwide
-  )
+  fws = lookup(var.system_settings, "fabric_wide_settings", {})
+  fabric_wide_settings = local.rss.fws == false && length(lookup(
+    var.system_settings, "fabric_wide_settings", {})) > 0 ? merge({ create = true }, local.fwide,
+    { ssl_opflex_versions = merge(local.fwide.ssl_opflex_versions, lookup(local.fws, "ssl_opflex_versions", {}))
+    }) : local.rss.fws == false ? merge({ create = false }, local.fwide
+  ) : merge({ create = true }, local.fwide)
 
 }
