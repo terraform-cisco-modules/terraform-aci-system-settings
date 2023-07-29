@@ -32,7 +32,7 @@ defaults:
       disable_remote_ep_learning: true
       enforce_domain_validation: true
       enforce_epg_vlan_validation: false
-      enforce_subnet_check: true
+      enforce_subnet_check: false
       leaf_opflex_client_authentication: true
       leaf_ssl_opflex: true
       reallocate_gipo: false
