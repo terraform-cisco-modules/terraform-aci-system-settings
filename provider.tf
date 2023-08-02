@@ -1,7 +1,7 @@
 #_______________________________________________________________________
 #
-# Terraform Required Parameters - Intersight Provider
-# https://registry.terraform.io/providers/CiscoDevNet/intersight/latest
+# Terraform Required Parameters - ACI Provider
+# https://registry.terraform.io/providers/CiscoDevNet/aci/latest
 #_______________________________________________________________________
 
 terraform {
