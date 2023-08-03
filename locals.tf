@@ -88,7 +88,7 @@ locals {
     local.endpoints, "rouge_ep_control", {})) > 0 ? merge({ create = true }, local.endpoint.rouge_ep_control,
     lookup(local.endpoints, "rouge_ep_control", {})) : local.rss.epctrl.rouge_ep_control == false ? merge(
     { create = false }, local.endpoint.rouge_ep_control
-  ) : merge({ create = true }, local.endpoint.ip_aging)
+  ) : merge({ create = true }, local.endpoint.rouge_ep_control)
 
 
   #__________________________________________________________

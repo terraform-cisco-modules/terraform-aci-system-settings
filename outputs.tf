@@ -83,4 +83,3 @@ output "ptp_and_latency_measurement" {
   value = { for v in sort(keys(aci_rest_managed.ptp_and_latency_measurement)
   ) : v => aci_rest_managed.ptp_and_latency_measurement[v].id }
 }
-

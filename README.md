@@ -57,7 +57,6 @@ A Terraform module to configure ACI System Settings.
 | [aci_mgmt_preference.apic_connectivity_preference](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/mgmt_preference) | resource |
 | [aci_port_tracking.port_tracking](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/port_tracking) | resource |
 | [aci_rest.bgp_instance](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest) | resource |
-| [aci_rest.endpoint_controls](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest) | resource |
 | [aci_rest_managed.bgp_autonomous_system_number](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 | [aci_rest_managed.fabric_wide_settings](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 | [aci_rest_managed.fabric_wide_settings_5_2_3](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
