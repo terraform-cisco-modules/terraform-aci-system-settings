@@ -1,4 +1,5 @@
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "mgmtConnectivityPrefs"
  - Distinguished Named "uni/fabric/connectivityPrefs"
@@ -13,11 +14,12 @@ resource "aci_mgmt_preference" "apic_connectivity_preference" {
 }
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "bgpAsP"
  - Distinguished Name: "uni/fabric/bgpInstP-default"
 GUI Location:
- - System > System Settings > BGP Route Reflector: {BGP_ASN}
+ - System > System Settings > BGP Route Reflector: {asn}
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "bgp_autonomous_system_number" {
@@ -32,9 +34,10 @@ resource "aci_rest_managed" "bgp_autonomous_system_number" {
 
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "bgpRRNodePEp"
- - Distinguished Name: "uni/fabric/bgpInstP-default/rr/node-{Node_ID}"
+ - Distinguished Name: "uni/fabric/bgpInstP-default/rr/node-{node_id}"
 GUI Location:
  - System > System Settings > BGP Route Reflector: Route Reflector Nodes
 _______________________________________________________________________________________________________________________
@@ -50,6 +53,15 @@ resource "aci_rest_managed" "route_reflector_nodes" {
   }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+API Information:
+ - Class: "bgpInstPol"
+ - Distinguished Name: "uni/fabric/bgpInstP-default"
+GUI Location:
+ - System > System Settings > BGP Route Reflector: Route Reflector Nodes
+_______________________________________________________________________________________________________________________
+*/
 resource "aci_rest" "bgp_instance" {
   for_each = { for v in ["default"] : v => merge(
     local.defaults.bgp_route_reflector, lookup(var.system_settings, "bgp_route_reflector", {})
@@ -62,6 +74,7 @@ resource "aci_rest" "bgp_instance" {
   }
 }
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "coopPol"
  - Distinguished Named "uni/fabric/pol-default"
@@ -78,36 +91,7 @@ resource "aci_coop_policy" "coop_group" {
 
 
 /*_____________________________________________________________________________________________________________________
-API Information:
- - Class: "epControlP"
- - Distinguished Name: "uni/infra/epCtrlP-default"
-GUI Location:
- - System > System Settings > Rogue EP Control
-_______________________________________________________________________________________________________________________
-*/
-resource "aci_endpoint_controls" "rouge_ep_control" {
-  for_each = { for v in [local.rouge_ep_control] : "default" => v if v.create == true || v.create == "true" }
-  admin_st = each.value.administrative_state
-  #description           = each.value.description
-  hold_intvl            = each.value.hold_interval
-  rogue_ep_detect_intvl = each.value.rouge_interval
-  rogue_ep_detect_mult  = each.value.rouge_multiplier
-}
 
-/*_____________________________________________________________________________________________________________________
-API Information:
- - Class: "epIpAgingP"
- - Distinguished Name: "uni/infra/ipAgingP-default"
-GUI Location:
- - System > System Settings > Endpoint Controls > Ip Aging
-_______________________________________________________________________________________________________________________
-*/
-resource "aci_endpoint_ip_aging_profile" "ip_aging" {
-  for_each = { for v in [local.ip_aging] : "default" => v if v.create == true || v.create == "true" }
-  admin_st = lookup(local.ip_aging, "administrative_state", local.ipa.administrative_state)
-}
-
-/*_____________________________________________________________________________________________________________________
 API Information:
  - Class: "epLoopProtectP"
  - Distinguished Name: "uni/infra/epLoopProtectP-default"
@@ -132,6 +116,39 @@ resource "aci_endpoint_loop_protection" "ep_loop_protection" {
 }
 
 /*_____________________________________________________________________________________________________________________
+
+API Information:
+ - Class: "epIpAgingP"
+ - Distinguished Name: "uni/infra/ipAgingP-default"
+GUI Location:
+ - System > System Settings > Endpoint Controls > Ip Aging
+_______________________________________________________________________________________________________________________
+*/
+resource "aci_endpoint_ip_aging_profile" "ip_aging" {
+  for_each = { for v in [local.ip_aging] : "default" => v if v.create == true || v.create == "true" }
+  admin_st = each.value.administrative_state
+}
+
+/*_____________________________________________________________________________________________________________________
+
+API Information:
+ - Class: "epControlP"
+ - Distinguished Name: "uni/infra/epCtrlP-default"
+GUI Location:
+ - System > System Settings > Rogue EP Control
+_______________________________________________________________________________________________________________________
+*/
+resource "aci_endpoint_controls" "rouge_ep_control" {
+  for_each = { for v in [local.rouge_ep_control] : "default" => v if v.create == true || v.create == "true" }
+  admin_st = each.value.administrative_state
+  #description           = each.value.description
+  hold_intvl            = each.value.hold_interval
+  rogue_ep_detect_intvl = each.value.rouge_interval
+  rogue_ep_detect_mult  = each.value.rouge_multiplier
+}
+
+/*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "infraSetPol"
  - Distinguished Name: "uni/infra/settings"
@@ -198,6 +215,7 @@ resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
 
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "pkiExportEncryptionKey"
  - Distinguished Name: "uni/exportcryptkey"
@@ -207,20 +225,17 @@ ________________________________________________________________________________
 */
 resource "aci_encryption_key" "global_aes_passphrase" {
   for_each = {
-    for v in ["default"] : "default" => v if length(local.global_aes_encryption_settings) > 0
+    for v in [local.global_aes_passphrase] : "default" => v if v.create == true || v.create == "true"
   }
-  clear_encryption_key = lookup(local.global_aes_encryption_settings, "clear_passphrase", local.aes.clear_passphrase
-  ) == true ? "yes" : "no"
-  description = lookup(local.global_aes_encryption_settings, "description", local.aes.description)
-  passphrase  = var.aes_passphrase
-  passphrase_key_derivation_version = lookup(
-    local.global_aes_encryption_settings, "passphrase_key_derivation_version", local.aes.passphrase_key_derivation_version
-  )
-  strong_encryption_enabled = lookup(local.global_aes_encryption_settings, "enable_encryption", local.aes.enable_encryption
-  ) == true ? "yes" : "no"
+  clear_encryption_key              = each.value.clear_passphrase == true ? "yes" : "no"
+  description                       = each.value.description
+  passphrase                        = var.aes_passphrase
+  passphrase_key_derivation_version = each.value.passphrase_key_derivation_version
+  strong_encryption_enabled         = each.value.enable_encryption == true ? "yes" : "no"
 }
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "isisDomPol"
  - Distinguished Name: "uni/fabric/isisDomP-default"
@@ -229,7 +244,7 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_isis_domain_policy" "isis_policy" {
-  for_each            = { for v in [local.isis_policy] : "default" => v if v.create == true }
+  for_each            = { for v in [local.isis_policy] : "default" => v if v.create == true || v.create == "true" }
   lsp_fast_flood      = each.value.lsp_fast_flood_mode
   lsp_gen_init_intvl  = each.value.lsp_generation_initial_wait_interval
   lsp_gen_max_intvl   = each.value.lsp_generation_maximum_wait_interval
@@ -243,6 +258,7 @@ resource "aci_isis_domain_policy" "isis_policy" {
 
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "infraPortTrackPol"
  - Distinguished Name: "uni/infra/trackEqptFabP-default"
@@ -251,7 +267,7 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_port_tracking" "port_tracking" {
-  for_each           = { for v in [local.port_tracking] : "default" => v if v.create == true }
+  for_each           = { for v in [local.port_tracking] : "default" => v if v.create == true || v.create == "true" }
   admin_st           = each.value.port_tracking_state == true ? "on" : "off"
   delay              = each.value.delay_restore_timer
   include_apic_ports = each.value.include_apic_ports == true ? "yes" : "no"
@@ -260,6 +276,7 @@ resource "aci_port_tracking" "port_tracking" {
 
 
 /*_____________________________________________________________________________________________________________________
+
 API Information:
  - Class: "latencyPtpMode"
  - Distinguished Name: "uni/fabric/ptpmode"
@@ -268,25 +285,23 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "ptp_and_latency_measurement" {
-  for_each   = { for v in ["default"] : "default" => v if length(local.ptp_and_latency_measurement) > 0 }
+  for_each   = { for v in [local.ptp_and_latency_measurement] : "default" => v if v.create == true || v.create == "true" }
   class_name = "latencyPtpMode"
   dn         = "uni/fabric/ptpmode"
   content = {
     #annotation         = "orchestrator:terraform"
-    fabAnnounceIntvl   = lookup(local.ptp_and_latency_measurement, "announce_interval", local.ptp.announce_interval)
-    fabAnnounceTimeout = lookup(local.ptp_and_latency_measurement, "announce_timeout", local.ptp.announce_timeout)
-    fabDelayIntvl      = lookup(local.ptp_and_latency_measurement, "delay_request_interval", local.ptp.delay_request_interval)
-    fabProfileTemplate = length(regexall(
-      "AES67-2015", lookup(local.ptp_and_latency_measurement, "ptp_profile", local.ptp.ptp_profile))
-      ) > 0 ? "aes67" : length(regexall(
-      "Default", lookup(local.ptp_and_latency_measurement, "ptp_profile", local.ptp.ptp_profile))
-      ) > 0 ? "default" : length(regexall(
-      "SMPTE-2059-2", lookup(local.ptp_and_latency_measurement, "ptp_profile", local.ptp.ptp_profile))
+    fabAnnounceIntvl   = each.value.announce_interval
+    fabAnnounceTimeout = each.value.announce_timeout
+    fabDelayIntvl      = each.value.delay_request_interval
+    fabProfileTemplate = length(
+      regexall("AES67-2015", each.value.ptp_profile)) > 0 ? "aes67" : length(
+      regexall("Default", each.value.ptp_profile)) > 0 ? "default" : length(
+      regexall("SMPTE-2059-2", each.value.ptp_profile)
     ) > 0 ? "smtpe" : ""
-    fabSyncIntvl = lookup(local.ptp_and_latency_measurement, "sync_interval", local.ptp.sync_interval)
-    globalDomain = lookup(local.ptp_and_latency_measurement, "global_domain", local.ptp.global_domain)
-    prio1        = lookup(local.ptp_and_latency_measurement, "global_priority_1", local.ptp.global_priority_1)
-    prio2        = lookup(local.ptp_and_latency_measurement, "global_priority_2", local.ptp.global_priority_2)
-    state        = lookup(local.ptp_and_latency_measurement, "precision_time_protocol", local.ptp.precision_time_protocol)
+    fabSyncIntvl = each.value.sync_interval
+    globalDomain = each.value.global_domain
+    prio1        = each.value.global_priority_1
+    prio2        = each.value.global_priority_2
+    state        = each.value.precision_time_protocol
   }
 }

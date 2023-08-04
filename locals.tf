@@ -29,9 +29,10 @@ locals {
     { create = true }, local.coop_grp, lookup(var.system_settings, "coop_group", {})
   ) : local.rss.coop_grp == true ? merge({ create = true }, local.coop_grp) : merge({ create = false }, local.coop_grp)
 
-  global_aes_encryption_settings = local.rss.aes == true ? local.aes : lookup(
-    var.system_settings, "global_aes_encryption_settings", {}
-  )
+  global_aes_encryption_settings = local.rss.aes == false && length(lookup(
+    var.system_settings, "global_aes_encryption_settings", {})) > 0 ? merge(
+    { create = true }, local.aes, lookup(var.system_settings, "global_aes_encryption_settings", {})
+  ) : local.rss.aes == true ? merge({ create = true }, local.aes) : merge({ create = false }, local.aes)
 
   isis_policy = local.rss.isis == false && length(lookup(var.system_settings, "isis_policy", {})) > 0 ? merge(
     { create = true }, local.isis, lookup(var.system_settings, "isis_policy", {})
