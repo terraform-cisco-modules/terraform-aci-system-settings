@@ -225,7 +225,7 @@ ________________________________________________________________________________
 */
 resource "aci_encryption_key" "global_aes_passphrase" {
   for_each = {
-    for v in [local.global_aes_passphrase] : "default" => v if v.create == true || v.create == "true"
+    for v in [local.global_aes_encryption_settings] : "default" => v if v.create == true || v.create == "true"
   }
   clear_encryption_key              = each.value.clear_passphrase == true ? "yes" : "no"
   description                       = each.value.description
