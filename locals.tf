@@ -2,15 +2,14 @@ locals {
   defaults = yamldecode(file("${path.module}/defaults.yaml")).defaults.system_settings
 
   # DEFAULTS
-  aes      = local.defaults.global_aes_encryption_settings
-  coop_grp = local.defaults.coop_group
-  endpoint = local.defaults.endpoint_controls
-  epl      = local.endpoint.ep_loop_protection
-  fwide    = local.defaults.fabric_wide_settings
-  ipa      = local.endpoint.ip_aging
-  isis     = local.defaults.isis_policy
-  ptp      = local.defaults.ptp_and_latency_measurement
-  ptrack   = local.defaults.port_tracking
+  aes          = local.defaults.global_aes_encryption_settings
+  apic_version = var.system_settings.controller.version
+  coop_grp     = local.defaults.coop_group
+  endpoint     = local.defaults.endpoint_controls
+  fwide        = local.defaults.fabric_wide_settings
+  isis         = local.defaults.isis_policy
+  ptp          = local.defaults.ptp_and_latency_measurement
+  ptrack       = local.defaults.port_tracking
 
   # Recommended Settings
   rsettings = local.defaults.recommended_settings

@@ -45,7 +45,7 @@ defaults:
     global_aes_encryption_settings:
       clear_passphrase: false
       description: ''
-      enable_encryption: true
+      passphrase: 1
       passphrase_key_derivation_version: v1
     isis_policy:
       isis_mtu: 1492

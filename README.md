@@ -10,7 +10,7 @@ A Terraform module to configure ACI System Settings.
 
 ### A comprehensive example using this module is available below:
 
-## [Easy ACI](https://github.com/terraform-cisco-modules/easy-aci-complete)
+## [Easy ACI](https://github.com/terraform-cisco-modules/easy-aci)
 
 ## Requirements
 
@@ -22,15 +22,13 @@ A Terraform module to configure ACI System Settings.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aci"></a> [aci](#provider\_aci) | >= 2.9.0 |
+| <a name="provider_aci"></a> [aci](#provider\_aci) | 2.10.1 |
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_system_settings"></a> [system\_settings](#input\_system\_settings) | System Settings Model data. | `any` | n/a | yes |
-| <a name="input_annotations"></a> [annotations](#input\_annotations) | The Version of this Script. | <pre>list(object(<br>    {<br>      key   = string<br>      value = string<br>    }<br>  ))</pre> | <pre>[<br>  {<br>    "key": "orchestrator",<br>    "value": "terraform:easy-aci:v2.0"<br>  }<br>]</pre> | no |
-| <a name="input_apic_version"></a> [apic\_version](#input\_apic\_version) | The Version of ACI Running in the Environment. | `string` | `"5.2(4e)"` | no |
-| <a name="input_aes_passphrase"></a> [aes\_passphrase](#input\_aes\_passphrase) | Global AES Passphrase. | `string` | n/a | yes |
+| <a name="input_system_settings"></a> [system\_settings](#input\_system\_settings) | System Settings YAML Model data. | `any` | n/a | yes |
+| <a name="input_system_sensitive"></a> [system\_sensitive](#input\_system\_sensitive) | Note: Sensitive Variables cannot be added to a for\_each loop so these are added seperately.<br>    * mcp\_instance\_policy\_default: MisCabling Protocol Instance Settings.<br>      - key: The key or password used to uniquely identify this configuration object.<br>    * virtual\_networking: ACI to Virtual Infrastructure Integration.<br>      - password: Username/Password combination to Authenticate to the Virtual Infrastructure. | <pre>object({<br>    global_aes_encryption_settings = object({<br>      passphrase = map(string)<br>    })<br>  })</pre> | <pre>{<br>  "global_aes_encryption_settings": {<br>    "passphrase": {}<br>  }<br>}</pre> | no |
 ## Outputs
 
 | Name | Description |

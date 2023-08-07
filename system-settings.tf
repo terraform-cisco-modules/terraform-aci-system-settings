@@ -158,8 +158,10 @@ ________________________________________________________________________________
 */
 resource "aci_rest_managed" "fabric_wide_settings" {
   for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
-    regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", var.apic_version)
-  ) > 0 || v.create == "true" && length(regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", var.apic_version)) > 0 }
+    regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", local.apic_version)
+    ) > 0 || v.create == "true" && length(
+    regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", local.apic_version)) > 0
+  }
   class_name = "infraSetPol"
   dn         = "uni/infra/settings"
   content = {
@@ -177,9 +179,9 @@ resource "aci_rest_managed" "fabric_wide_settings" {
 
 resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
   for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
-    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", var.apic_version)
+    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", local.apic_version)
     ) > 0 || v.create == "true" && length(
-    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", var.apic_version)
+    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", local.apic_version)
   ) > 0 }
   class_name = "infraSetPol"
   dn         = "uni/infra/settings"
@@ -227,11 +229,13 @@ resource "aci_encryption_key" "global_aes_passphrase" {
   for_each = {
     for v in [local.global_aes_encryption_settings] : "default" => v if v.create == true || v.create == "true"
   }
-  clear_encryption_key              = each.value.clear_passphrase == true ? "yes" : "no"
-  description                       = each.value.description
-  passphrase                        = var.aes_passphrase
+  clear_encryption_key = each.value.clear_passphrase == true ? "yes" : "no"
+  description          = each.value.description
+  passphrase           = var.system_sensitive.global_aes_encryption_settings.passphrase[each.value.passphrase]
+  strong_encryption_enabled = length(compact(
+    [var.system_sensitive.global_aes_encryption_settings.passphrase[each.value.passphrase]]
+  )) > 0 ? "yes" : "no"
   passphrase_key_derivation_version = each.value.passphrase_key_derivation_version
-  strong_encryption_enabled         = each.value.enable_encryption == true ? "yes" : "no"
 }
 
 /*_____________________________________________________________________________________________________________________
