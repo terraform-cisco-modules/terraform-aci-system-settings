@@ -3,7 +3,7 @@ locals {
 
   # DEFAULTS
   aes          = local.defaults.global_aes_encryption_settings
-  apic_version = var.system_settings.controller.version
+  apic_version = var.system_settings.global_settings.controller.version
   coop_grp     = local.defaults.coop_group
   endpoint     = local.defaults.endpoint_controls
   fwide        = local.defaults.fabric_wide_settings

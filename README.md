@@ -22,7 +22,7 @@ A Terraform module to configure ACI System Settings.
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aci"></a> [aci](#provider\_aci) | 2.10.1 |
+| <a name="provider_aci"></a> [aci](#provider\_aci) | >= 2.9.0 |
 ## Inputs
 
 | Name | Description | Type | Default | Required |
