@@ -157,39 +157,10 @@ GUI Location:
 _______________________________________________________________________________________________________________________
 */
 resource "aci_rest_managed" "fabric_wide_settings" {
-  for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
-    regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", local.apic_version)
-    ) > 0 || v.create == "true" && length(
-    regexall("(^[3-4]\\..*|^5.[0-1].*|^5.2\\([0-2].*\\))", local.apic_version)) > 0
-  }
+  for_each   = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true || v.create == "true" }
   class_name = "infraSetPol"
   dn         = "uni/infra/settings"
-  content = {
-    #annotation                 = "orchestrator:terraform"
-    domainValidation           = each.value.enforce_domain_validation == true ? "yes" : "no"
-    enforceSubnetCheck         = each.value.enforce_subnet_check == true ? "yes" : "no"
-    opflexpAuthenticateClients = each.value.spine_opflex_client_authentication == true ? "yes" : "no"
-    opflexpUseSsl              = each.value.spine_ssl_opflex == true ? "yes" : "no"
-    reallocateGipo             = each.value.reallocate_gipo == true ? "yes" : "no"
-    restrictInfraVLANTraffic   = each.value.restrict_infra_vlan_traffic == true ? "yes" : "no"
-    unicastXrEpLearnDisable    = each.value.disable_remote_ep_learning == true ? "yes" : "no"
-    validateOverlappingVlans   = each.value.enforce_epg_vlan_validation == true ? "yes" : "no"
-  }
-}
-
-resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
-  for_each = { for v in [local.fabric_wide_settings] : "default" => v if v.create == true && length(
-    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", local.apic_version)
-    ) > 0 || v.create == "true" && length(
-    regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", local.apic_version)
-  ) > 0 }
-  class_name = "infraSetPol"
-  dn         = "uni/infra/settings"
-  content = {
-    # disableEpDampening     = 	each.value. # disable_ep_dampening
-    # enableMoStreaming      = 	each.value.
-    # enableRemoteLeafDirect = 	each.value.
-    # policySyncNodeBringup  = 	each.value.
+  content = length(regexall("(^5\\.2\\(3[a-z]\\)|^5\\.2\\([4-9][a-z]\\)|^[6-9]\\.)", local.apic_version)) > 0 ? {
     #annotation                     = "orchestrator:terraform"
     domainValidation               = each.value.enforce_domain_validation == true ? "yes" : "no"
     enforceSubnetCheck             = each.value.enforce_subnet_check == true ? "yes" : "no"
@@ -212,6 +183,16 @@ resource "aci_rest_managed" "fabric_wide_settings_5_2_3" {
     restrictInfraVLANTraffic = each.value.restrict_infra_vlan_traffic == true ? "yes" : "no"
     unicastXrEpLearnDisable  = each.value.disable_remote_ep_learning == true ? "yes" : "no"
     validateOverlappingVlans = each.value.enforce_epg_vlan_validation == true ? "yes" : "no"
+    } : {
+    #annotation                 = "orchestrator:terraform"
+    domainValidation           = each.value.enforce_domain_validation == true ? "yes" : "no"
+    enforceSubnetCheck         = each.value.enforce_subnet_check == true ? "yes" : "no"
+    opflexpAuthenticateClients = each.value.spine_opflex_client_authentication == true ? "yes" : "no"
+    opflexpUseSsl              = each.value.spine_ssl_opflex == true ? "yes" : "no"
+    reallocateGipo             = each.value.reallocate_gipo == true ? "yes" : "no"
+    restrictInfraVLANTraffic   = each.value.restrict_infra_vlan_traffic == true ? "yes" : "no"
+    unicastXrEpLearnDisable    = each.value.disable_remote_ep_learning == true ? "yes" : "no"
+    validateOverlappingVlans   = each.value.enforce_epg_vlan_validation == true ? "yes" : "no"
   }
 }
 

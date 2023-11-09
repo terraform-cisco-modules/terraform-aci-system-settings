@@ -54,12 +54,10 @@ output "endpoint_controls" {
 
 output "fabric_wide_settings" {
   description = "Identifiers for Fabric Wide Settings: System Settings => Fabric Wide Settings"
-  value = merge({
+  value = {
     for v in sort(keys(aci_rest_managed.fabric_wide_settings)
-    ) : v => aci_rest_managed.fabric_wide_settings[v].id }, {
-    for v in sort(keys(aci_rest_managed.fabric_wide_settings_5_2_3)
-    ) : v => aci_rest_managed.fabric_wide_settings_5_2_3[v].id }
-  )
+    ) : v => aci_rest_managed.fabric_wide_settings[v].id
+  }
 }
 
 output "global_aes_encryption_settings" {
