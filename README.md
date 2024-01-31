@@ -17,12 +17,12 @@ A Terraform module to configure ACI System Settings.
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aci"></a> [aci](#requirement\_aci) | >= 2.9.0 |
+| <a name="requirement_aci"></a> [aci](#requirement\_aci) | >= 2.13.0 |
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aci"></a> [aci](#provider\_aci) | >= 2.9.0 |
+| <a name="provider_aci"></a> [aci](#provider\_aci) | 2.10.1 |
 ## Inputs
 
 | Name | Description | Type | Default | Required |
@@ -57,7 +57,6 @@ A Terraform module to configure ACI System Settings.
 | [aci_rest.bgp_instance](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest) | resource |
 | [aci_rest_managed.bgp_autonomous_system_number](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 | [aci_rest_managed.fabric_wide_settings](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
-| [aci_rest_managed.fabric_wide_settings_5_2_3](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 | [aci_rest_managed.ptp_and_latency_measurement](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 | [aci_rest_managed.route_reflector_nodes](https://registry.terraform.io/providers/CiscoDevNet/aci/latest/docs/resources/rest_managed) | resource |
 <!-- END_TF_DOCS -->
