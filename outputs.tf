@@ -1,3 +1,8 @@
+/*_____________________________________________________________________________________________________________________
+
+APIC Connectivity Preference — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "apic_connectivity_preference" {
   description = "Identifiers for APIC Connectivity Preference: System Settings => APIC Connectivity Preference"
   value = { for v in sort(
@@ -5,6 +10,11 @@ output "apic_connectivity_preference" {
   ) : v => aci_mgmt_preference.apic_connectivity_preference[v].id }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+BGP Route Reflector — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "bgp_route_reflector" {
   description = <<-EOT
     Identifiers for:
@@ -23,6 +33,11 @@ output "bgp_route_reflector" {
   }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+COOP Group — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "coop_group" {
   description = "Identifiers for COOP Group: System Settings => COOP Group"
   value = { for v in sort(
@@ -30,6 +45,11 @@ output "coop_group" {
   ) : v => aci_coop_policy.coop_group[v].id }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+Endpoint Controls — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "endpoint_controls" {
   description = <<-EOT
     Identifiers for:
@@ -52,6 +72,11 @@ output "endpoint_controls" {
   }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+Fabric Wide Settings — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "fabric_wide_settings" {
   description = "Identifiers for Fabric Wide Settings: System Settings => Fabric Wide Settings"
   value = {
@@ -60,22 +85,42 @@ output "fabric_wide_settings" {
   }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+Global AES Encryption Settings — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "global_aes_encryption_settings" {
   description = "Identifiers for Global AES Encryption Settings: System Settings => Global AES Encryption Settings"
   value = { for v in sort(keys(aci_encryption_key.global_aes_passphrase)
   ) : v => aci_encryption_key.global_aes_passphrase[v].id }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+ISIS Policy — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "isis_policy" {
   description = "Identifiers for ISIS Policy: System Settings => ISIS Policy"
   value       = { for v in sort(keys(aci_isis_domain_policy.isis_policy)) : v => aci_isis_domain_policy.isis_policy[v].id }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+Port Tracking — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "port_tracking" {
   description = "Identifiers for Port Tracking: System Settings => Port Tracking"
   value       = { for v in sort(keys(aci_port_tracking.port_tracking)) : v => aci_port_tracking.port_tracking[v].id }
 }
 
+/*_____________________________________________________________________________________________________________________
+
+PTP and Latency Measurement — Outputs
+_______________________________________________________________________________________________________________________
+*/
 output "ptp_and_latency_measurement" {
   description = "Identifiers for PTP and Latency Measurement: System Settings => PTP and Latency Measurement"
   value = { for v in sort(keys(aci_rest_managed.ptp_and_latency_measurement)
